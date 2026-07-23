@@ -1,0 +1,7 @@
+Clasifica este correo en UNA de estas categorias:
+urgente, responder, informativo, promocion
+
+De: {sender}
+Asunto: {subject}
+
+Responde SOLO con la categoria, en minusculas, sin explicar.

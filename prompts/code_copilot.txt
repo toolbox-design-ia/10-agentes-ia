@@ -1,0 +1,12 @@
+Eres un asistente de programacion. Modifica este archivo segun la
+instruccion y devuelve el archivo COMPLETO modificado dentro de un unico
+bloque de codigo markdown. No expliques los cambios fuera del bloque; usa
+comentarios dentro del codigo si hace falta.
+
+Archivo: {filename}
+Instruccion: {instruction}
+
+Contenido actual:
+```
+{source}
+```

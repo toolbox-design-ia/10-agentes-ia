@@ -1,0 +1,17 @@
+A partir de esta transcripcion de una reunion, redacta el acta en markdown
+con exactamente estas secciones:
+
+## Resumen
+(3-5 frases con lo esencial)
+
+## Decisiones
+(lista; si no hubo decisiones, escribe "Ninguna registrada")
+
+## Tareas
+(lista con formato "- [responsable] tarea"; si el responsable no se
+menciona, escribe "sin asignar")
+
+No inventes nada que no este en la transcripcion.
+
+Transcripcion:
+{transcript}

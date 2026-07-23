@@ -8,12 +8,18 @@ COMPLETO de los diez agentes, la instalación guiada y la guía de errores.
 
 ## Puesta en marcha (Anexo A del libro)
 
-```bash
-git clone <este-repositorio>
+```
+git clone https://github.com/studio35post/10-agentes-ia.git
 cd 10-agentes-ia
-./setup.sh          # crea el venv, instala dependencias y verifica Ollama
+
+# macOS / Linux
+./setup.sh            # crea el venv, instala dependencias y verifica Ollama
+
+# Windows (PowerShell)
+.\setup.ps1
+
 cp .env.example .env  # rellena tus credenciales (el libro lo guía campo a campo)
-python run.py       # menú: elige qué agente lanzar
+python run.py         # menú: elige qué agente lanzar
 ```
 
 Requisitos: Python 3.11+ y [Ollama](https://ollama.com) instalado.
@@ -22,16 +28,17 @@ Hardware por agente: ver la tabla de VRAM del capítulo 2.
 ## Estructura
 
 - `core/` — el patrón de agente reutilizable (capítulo 3)
+- `hello_agent.py` — la prueba de vida del capítulo 3, ejecutable tal cual
 - `agents/NN_*/` — un directorio por agente (capítulos 4-13), cada uno con su
   `README` y su código completo
-- `prompts/` — prompts de sistema versionados
+- `prompts/` — plantillas de prompt en texto plano, separadas del código
 - `data/`, `traces/` — datos de trabajo y trazas (no se versionan)
 - `docs/troubleshooting.md` — la guía de solución de problemas (Anexo B)
 
 ## Correspondencia capítulo → código
 
 | Capítulo | Carpeta |
-|---|---|
+| --- | --- |
 | 3. El patrón de agente | `core/` + `hello_agent.py` |
 | 4. Tu segundo cerebro privado | `agents/01_second_brain/` |
 | 5. El bibliotecario | `agents/02_librarian/` |
@@ -43,6 +50,11 @@ Hardware por agente: ver la tabla de VRAM del capítulo 2.
 | 11. El copiloto de código | `agents/08_code_copilot/` |
 | 12. El asistente de voz | `agents/09_voice_assistant/` |
 | 13. El equipo | `agents/10_orchestrator/` |
+
+Los fragmentos impresos en el libro corresponden a estos archivos; donde el
+capítulo imprime una función, aquí está con el mismo nombre. Este
+repositorio es también la fe de erratas viva del libro: si encuentras un
+error, abre un issue.
 
 ## Licencia
 

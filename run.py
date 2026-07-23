@@ -1,19 +1,35 @@
 #!/usr/bin/env python3
 """Entry point menu — launch any agent without editing code (book Annex A)."""
+import importlib
 import sys
 
 AGENTS = [
-    ("Second brain (RAG over your documents)", "agents.01_second_brain"),
-    ("Librarian (file organizer, dry-run first)", "agents.02_librarian"),
-    ("Mail clerk (IMAP triage, never sends alone)", "agents.03_mail_clerk"),
-    ("Meeting notes (Whisper -> minutes)", "agents.04_meeting_notes"),
-    ("Invoice reader (local vision -> CSV)", "agents.05_invoice_reader"),
-    ("Web watcher (scrape + change alerts)", "agents.06_web_watcher"),
-    ("Researcher (multi-step, cited sources)", "agents.07_researcher"),
-    ("Code copilot (editor + local models)", "agents.08_code_copilot"),
-    ("Voice assistant (Whisper + Piper)", "agents.09_voice_assistant"),
-    ("The team (MCP orchestrator)", "agents.10_orchestrator"),
+    ("Second brain (RAG over your documents)", "agents.01_second_brain.agent"),
+    ("Librarian (file organizer, dry-run first)", "agents.02_librarian.agent"),
+    ("Mail clerk (IMAP triage, never sends alone)", "agents.03_mail_clerk.agent"),
+    ("Meeting notes (Whisper -> minutes)", "agents.04_meeting_notes.agent"),
+    ("Invoice reader (local vision -> CSV)", "agents.05_invoice_reader.read_invoices"),
+    ("Web watcher (scrape + change alerts)", "agents.06_web_watcher.agent"),
+    ("Researcher (multi-step, cited sources)", "agents.07_researcher.agent"),
+    ("Code copilot (editor + local models)", "agents.08_code_copilot.agent"),
+    ("Voice assistant (Whisper + Piper)", "agents.09_voice_assistant.agent"),
+    ("The team (MCP orchestrator)", "agents.10_orchestrator.agent"),
 ]
+
+
+def launch(module_name: str) -> int:
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError as exc:
+        # Dependencia sin instalar: el Anexo B explica este error paso a paso
+        print(f"\nFalta un paquete: {exc.name}")
+        print("Activa el entorno virtual e instala las dependencias:")
+        print("  source .venv/bin/activate  (Windows: .venv\\Scripts\\activate)")
+        print("  pip install -r requirements.txt")
+        print("Si el error persiste, revisa el Anexo B del libro.")
+        return 1
+    # Los argumentos tras el numero del agente se pasan al agente tal cual
+    return module.main()
 
 
 def main() -> int:
@@ -30,9 +46,8 @@ def main() -> int:
     except (ValueError, IndexError):
         print("Opción no válida.")
         return 1
-    print(f"\n[{name}] — el código de este agente se añade con su capítulo.")
-    print(f"Módulo: {module} (ver la tabla capítulo → código del README)")
-    return 0
+    print(f"\n[{name}]\n")
+    return launch(module)
 
 
 if __name__ == "__main__":

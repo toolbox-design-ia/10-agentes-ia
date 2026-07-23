@@ -1,0 +1,10 @@
+Redacta un BORRADOR de respuesta a este correo. Tono profesional y breve.
+No inventes datos que no esten en el correo original. El usuario revisara
+el borrador antes de enviarlo.
+
+De: {sender}
+Asunto: {subject}
+Cuerpo:
+{body}
+
+Escribe solo el cuerpo de la respuesta, sin asunto ni firma.
