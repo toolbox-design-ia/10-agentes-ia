@@ -32,6 +32,7 @@ Hardware por agente: ver la tabla de VRAM del capítulo 2.
 - `agents/NN_*/` — un directorio por agente (capítulos 4-13), cada uno con su
   `README` y su código completo
 - `prompts/` — plantillas de prompt en texto plano, separadas del código
+- `mcp_servers/` — los agentes expuestos como servidores MCP (capítulo 14)
 - `data/`, `traces/` — datos de trabajo y trazas (no se versionan)
 - `docs/troubleshooting.md` — la guía de solución de problemas (Anexo B)
 
