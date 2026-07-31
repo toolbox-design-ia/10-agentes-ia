@@ -20,6 +20,12 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -131,6 +137,53 @@ def main() -> int:
     else:
         print("La pagina cambio, pero el cambio no cumple tu criterio.")
     return 0
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_check_url(url: str, criterio: str = "cualquier cambio de contenido") -> str:
+    html = descargar_con_backoff(url)
+    texto = extraer_texto_relevante(html)
+    estado = estado_de(url)
+    anterior = estado.read_text(encoding="utf-8") if estado.exists() else ""
+    estado.parent.mkdir(parents=True, exist_ok=True)
+    estado.write_text(texto, encoding="utf-8")
+    if not anterior:
+        return f"Primera visita a {url}: guardado el estado de referencia."
+    if anterior == texto:
+        return f"Sin cambios en {url}."
+    diff = "\n".join(diferencias(anterior.splitlines(), texto.splitlines())[:60])
+    relevante = es_cambio_relevante(diff, criterio)
+    return (f"{url} CAMBIO ({'relevante' if relevante else 'no relevante'} "
+            f"segun el criterio). Diff:\n{diff[:1500]}")
+
+
+def tool_fetch_text(url: str) -> str:
+    return extraer_texto_relevante(descargar_con_backoff(url))[:3000]
+
+
+class WebWatcherAgent(BaseAgent):
+    """Capitulo 9 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Vigilas paginas web y avisas solo de cambios que importen. Usa "
+        "check_url para comparar con la visita anterior. Resume el cambio en "
+        "una o dos frases; no pegues el diff entero en la respuesta."
+    )
+    tools = {
+        "check_url": {
+            "description": "Compara una URL con su estado guardado y describe el cambio",
+            "params": {"url": "direccion a vigilar",
+                       "criterio": "que tipo de cambio le interesa al usuario"},
+            "func": tool_check_url,
+        },
+        "fetch_text": {
+            "description": "Descarga una pagina y devuelve solo su texto visible",
+            "params": {"url": "direccion a leer"},
+            "func": tool_fetch_text,
+        },
+    }
 
 
 if __name__ == "__main__":

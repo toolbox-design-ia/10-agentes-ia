@@ -102,6 +102,76 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "acta_reunion",
+            "description": (
+                "Transcribe una grabacion de reunion y redacta el acta con decisiones y tareas. NO convoca reuniones ni envia el acta a nadie."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"audio_path": {"type": "string", "description": "ruta del archivo de audio"}},
+                "required": ["audio_path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "documentalista",
+            "description": (
+                "Investiga una pregunta cruzando varias fuentes web y devuelve un informe con las URLs citadas. NO accede a documentos privados del usuario."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"pregunta": {"type": "string", "description": "pregunta a investigar"}},
+                "required": ["pregunta"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "copiloto_codigo",
+            "description": (
+                "Propone un cambio sobre un archivo de codigo y lo devuelve como diff. NO escribe en el archivo: solo propone."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string", "description": "ruta del archivo"}, "instruccion": {"type": "string", "description": "que hay que cambiar"}},
+                "required": ["path", "instruccion"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "bibliotecario",
+            "description": (
+                "Propone como reorganizar una carpeta de archivos. NO mueve nada: el plan es un dry-run que la persona aprueba."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"carpeta": {"type": "string", "description": "ruta de la carpeta a ordenar"}},
+                "required": ["carpeta"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "asistente_voz",
+            "description": (
+                "Transcribe un archivo de audio a texto con Whisper local. NO graba del microfono por su cuenta."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"audio_path": {"type": "string", "description": "ruta del archivo de audio"}},
+                "required": ["audio_path"],
+            },
+        },
+    },
 ]
 
 
@@ -137,6 +207,27 @@ def ejecutar_herramienta(nombre: str, argumentos: dict) -> dict:
                argumentos.get("criterio", "")]
         run = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         return {"salida": run.stdout.strip()}
+    if nombre == "acta_reunion":
+        notes = importlib.import_module("agents.04_meeting_notes.agent")
+        ruta = Path(argumentos["audio_path"])
+        transcripcion = notes.transcribe(ruta)
+        return {"acta": notes.write_minutes(transcripcion),
+                "transcripcion_chars": len(transcripcion)}
+    if nombre == "documentalista":
+        res = importlib.import_module("agents.07_researcher.agent")
+        inv = res.investigate(res.LocalClient(), res.Searcher(), argumentos["pregunta"])
+        return {"informe": res.synthesize(res.LocalClient(), inv),
+                "fuentes": [f["url"] for f in inv.sources_read]}
+    if nombre == "copiloto_codigo":
+        cop = importlib.import_module("agents.08_code_copilot.agent")
+        return {"diff": cop.tool_propose_change(argumentos["path"],
+                                                argumentos["instruccion"])}
+    if nombre == "bibliotecario":
+        lib = importlib.import_module("agents.02_librarian.agent")
+        return {"plan": lib.tool_plan_moves(argumentos["carpeta"])}
+    if nombre == "asistente_voz":
+        voz = importlib.import_module("agents.09_voice_assistant.agent")
+        return {"texto": voz.tool_transcribe_audio(argumentos["audio_path"])}
     raise ValueError(f"herramienta desconocida: {nombre}")
 
 

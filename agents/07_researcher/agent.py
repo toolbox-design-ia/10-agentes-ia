@@ -15,6 +15,12 @@ import trafilatura
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 HEADERS = {"User-Agent": "Mozilla/5.0 (investigador local; libro 10 agentes)"}
@@ -151,6 +157,44 @@ def main() -> int:
     out.write_text(f"# {question}\n\n{report}\n", encoding="utf-8")
     print(f"\n{report}\n\nInforme guardado en {out}")
     return 0
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_search_web(query: str) -> str:
+    resultados = Searcher().search(query)
+    if not resultados:
+        return "Sin resultados."
+    return "\n".join(f"[{i}] {r['title']} — {r['url']}"
+                     for i, r in enumerate(resultados))
+
+
+def tool_read_url(url: str) -> str:
+    return read_page(url) or "No se pudo extraer texto de esa pagina."
+
+
+class ResearcherAgent(BaseAgent):
+    """Capitulo 10 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Investigas preguntas cruzando varias fuentes web. Busca con "
+        "search_web, lee con read_url, y cita siempre la URL de la que sale "
+        "cada afirmacion. Si dos fuentes se contradicen, di el desacuerdo en "
+        "vez de elegir una en silencio."
+    )
+    tools = {
+        "search_web": {
+            "description": "Busca en la web y devuelve titulos y URLs numerados",
+            "params": {"query": "consulta de busqueda"},
+            "func": tool_search_web,
+        },
+        "read_url": {
+            "description": "Descarga una URL y devuelve su texto principal limpio",
+            "params": {"url": "direccion a leer"},
+            "func": tool_read_url,
+        },
+    }
 
 
 if __name__ == "__main__":

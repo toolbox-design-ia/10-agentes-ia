@@ -12,6 +12,12 @@ import chromadb
 import ollama
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
@@ -99,6 +105,43 @@ def main() -> int:
         if not question:
             return 0
         print("\n" + answer(question))
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_search_notes(question: str) -> str:
+    hits = retrieve(question)
+    if not hits:
+        return "El indice no tiene fragmentos relevantes para esa pregunta."
+    return "\n\n".join(f"[{cid}] {text[:400]}" for cid, text in hits)
+
+
+def tool_reindex() -> str:
+    return f"Fragmentos indexados: {build_index()}"
+
+
+class SecondBrainAgent(BaseAgent):
+    """Capitulo 4 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Respondes preguntas sobre las notas personales del usuario. "
+        "Usa search_notes para recuperar fragmentos ANTES de responder, y "
+        "cita entre corchetes el identificador de cada fragmento que uses. "
+        "Si los fragmentos no contienen la respuesta, dilo claramente."
+    )
+    tools = {
+        "search_notes": {
+            "description": "Busca en el indice vectorial de notas del usuario",
+            "params": {"question": "pregunta o terminos a buscar"},
+            "func": tool_search_notes,
+        },
+        "reindex": {
+            "description": "Reconstruye el indice desde la carpeta de notas",
+            "params": {},
+            "func": tool_reindex,
+        },
+    }
 
 
 if __name__ == "__main__":

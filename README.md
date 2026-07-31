@@ -22,7 +22,11 @@ cp .env.example .env  # rellena tus credenciales (el libro lo guía campo a camp
 python run.py         # menú: elige qué agente lanzar
 ```
 
-Requisitos: Python 3.11+ y [Ollama](https://ollama.com) instalado.
+Requisitos: Python 3.11+ y [Ollama](https://ollama.com) instalado. Dos
+dependencias del **sistema**, que `pip` no instala: `ffmpeg` (capítulos 7 y 12,
+lo necesita Whisper) y `libportaudio2` (capítulo 12, para la captura con VAD).
+Sin ellas los agentes avisan y, donde es posible, siguen funcionando en modo
+degradado.
 Hardware por agente: ver la tabla de VRAM del capítulo 2.
 
 ## Estructura
@@ -35,6 +39,8 @@ Hardware por agente: ver la tabla de VRAM del capítulo 2.
 - `mcp_servers/` — los agentes expuestos como servidores MCP (capítulo 14)
 - `data/`, `traces/` — datos de trabajo y trazas (no se versionan)
 - `docs/troubleshooting.md` — la guía de solución de problemas (Anexo B)
+- `tests/` — las pruebas que se ejecutaron antes de publicar; `docs/PRUEBAS.md`
+  dice qué cubre cada una y, sobre todo, **qué no se ha podido probar y por qué**
 
 ## Correspondencia capítulo → código
 
@@ -48,8 +54,8 @@ Hardware por agente: ver la tabla de VRAM del capítulo 2.
 | 8. El lector de facturas | `agents/05_invoice_reader/` |
 | 9. El vigía de la web | `agents/06_web_watcher/` |
 | 10. El documentalista | `agents/07_researcher/` |
-| 11. El copiloto de código | `agents/08_code_copilot/` |
-| 12. El asistente de voz | `agents/09_voice_assistant/` |
+| 11. El copiloto de código | `agents/08_code_copilot/` (CLI + servidor LSP + ejecutor de tests) |
+| 12. El asistente de voz | `agents/09_voice_assistant/` (agente + VAD) |
 | 13. El equipo | `agents/10_orchestrator/` |
 
 Los fragmentos impresos en el libro corresponden a estos archivos; donde el

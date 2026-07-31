@@ -19,6 +19,12 @@ import ollama
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "llama3.2-vision:11b")
@@ -130,6 +136,48 @@ def main() -> int:
     print(f"\nProcesadas: {processed} | Con error: {failed} "
           f"| CSV: {args.output}")
     return 0 if failed == 0 else 1
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_read_invoice(path: str) -> str:
+    archivo = Path(path)
+    if not archivo.is_file():
+        return f"No existe el archivo {archivo}."
+    datos = Invoice(**extract_json(model_response(archivo)))
+    avisos = validate_invoice(datos)
+    return (f"proveedor={datos.supplier} fecha={datos.date} "
+            f"subtotal={datos.subtotal} impuesto={datos.tax_amount} "
+            f"total={datos.total} avisos={avisos or 'ninguno'}")
+
+
+def tool_process_folder(folder: str, output: str = "invoices.csv") -> str:
+    ok, pendientes = process_folder(Path(folder), Path(output))
+    return f"Procesadas {ok} facturas; {pendientes} marcadas para revision. CSV: {output}"
+
+
+class InvoiceReaderAgent(BaseAgent):
+    """Capitulo 8 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Extraes datos de facturas con un modelo de vision local. Nunca "
+        "inventes una cifra: si un campo no se lee con confianza, dilo. "
+        "Avisa siempre de que los importes deben revisarse antes de usarlos."
+    )
+    tools = {
+        "read_invoice": {
+            "description": "Lee una factura (imagen o PDF) y devuelve sus campos",
+            "params": {"path": "ruta de la imagen o PDF"},
+            "func": tool_read_invoice,
+        },
+        "process_folder": {
+            "description": "Procesa una carpeta de facturas y escribe un CSV",
+            "params": {"folder": "carpeta con las facturas",
+                       "output": "ruta del CSV de salida"},
+            "func": tool_process_folder,
+        },
+    }
 
 
 if __name__ == "__main__":

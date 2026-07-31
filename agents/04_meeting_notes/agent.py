@@ -11,6 +11,12 @@ from pathlib import Path
 import ollama
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
@@ -27,11 +33,25 @@ def transcribe(audio_path: Path) -> str:
 
 
 def write_minutes(transcript: str) -> str:
-    prompt = (PROMPTS_DIR / "meeting_minutes.txt").read_text(encoding="utf-8")
-    return ollama.generate(
-        model=MODEL,
-        prompt=prompt.format(transcript=transcript[:12000]),
-    )["response"].strip()
+    """Dos pasadas con validacion de esquema; una sola llamada si falla.
+
+    La ruta buena es minutes.build_minutes(): primera pasada permisiva para
+    sacar candidatos, segunda estricta que valida contra un modelo Pydantic y
+    reintenta si el modelo no cumple el formato. Si aun asi no converge, se
+    entrega el acta en una sola pasada antes que no entregar nada, avisando.
+    """
+    import importlib
+    minutes = importlib.import_module("agents.04_meeting_notes.minutes")
+    try:
+        return minutes.build_minutes(transcript).to_markdown()
+    except ValueError as exc:
+        print(f"  (Aviso: la validacion de esquema no convergio: {exc})")
+        print("  Entrego el acta en una sola pasada, sin validar.")
+        prompt = (PROMPTS_DIR / "meeting_minutes.txt").read_text(encoding="utf-8")
+        return ollama.generate(
+            model=MODEL,
+            prompt=prompt.format(transcript=transcript[:12000]),
+        )["response"].strip()
 
 
 def main() -> int:
@@ -56,6 +76,43 @@ def main() -> int:
     minutes_file.write_text(minutes, encoding="utf-8")
     print(f"Acta guardada: {minutes_file.name}\n\n{minutes}")
     return 0
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_transcribe(audio_path: str) -> str:
+    ruta = Path(audio_path)
+    if not ruta.is_file():
+        return f"No existe el archivo {ruta}."
+    texto = transcribe(ruta)
+    return texto[:4000]
+
+
+def tool_write_minutes(transcript: str) -> str:
+    return write_minutes(transcript)
+
+
+class MeetingNotesAgent(BaseAgent):
+    """Capitulo 7 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Conviertes grabaciones de reuniones en actas. Primero transcribe el "
+        "audio con transcribe, despues redacta el acta con write_minutes. "
+        "No inventes decisiones ni responsables que no esten en la transcripcion."
+    )
+    tools = {
+        "transcribe": {
+            "description": "Transcribe un archivo de audio con Whisper local",
+            "params": {"audio_path": "ruta del archivo de audio"},
+            "func": tool_transcribe,
+        },
+        "write_minutes": {
+            "description": "Redacta el acta a partir de una transcripcion",
+            "params": {"transcript": "texto de la transcripcion"},
+            "func": tool_write_minutes,
+        },
+    }
 
 
 if __name__ == "__main__":

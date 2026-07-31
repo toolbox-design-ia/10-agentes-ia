@@ -12,6 +12,12 @@ from pathlib import Path
 import ollama
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 FILES_ROOT = Path(os.getenv("FILES_ROOT", str(Path.home() / "Documentos")))
@@ -84,6 +90,49 @@ def main() -> int:
     if not apply_changes:
         print("\nNo se ha movido nada. Ejecuta con --apply para aplicar el plan.")
     return 0
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_plan_moves(folder: str = "") -> str:
+    root = Path(folder) if folder else FILES_ROOT
+    if not root.is_dir():
+        return f"No existe la carpeta {root}."
+    moves = plan_moves(root)
+    if not moves:
+        return f"{root} ya esta ordenada: nada que mover."
+    lineas = [f"{s.name} -> {d.relative_to(root)}" for s, d in moves[:40]]
+    return f"Plan (dry-run) para {root}, {len(moves)} archivos:\n" + "\n".join(lineas)
+
+
+def tool_classify_file(path: str) -> str:
+    target = Path(path)
+    if not target.is_file():
+        return f"No existe el archivo {target}."
+    return f"{target.name} -> carpeta {classify(target)}"
+
+
+class LibrarianAgent(BaseAgent):
+    """Capitulo 5 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Ayudas a ordenar carpetas. NUNCA mueves archivos: solo propones. "
+        "Usa plan_moves para ver el plan y classify_file para un archivo suelto. "
+        "Recuerda al usuario que la ejecucion real exige --apply."
+    )
+    tools = {
+        "plan_moves": {
+            "description": "Propone (sin ejecutar) como reorganizar una carpeta",
+            "params": {"folder": "ruta de la carpeta; vacio = FILES_ROOT del .env"},
+            "func": tool_plan_moves,
+        },
+        "classify_file": {
+            "description": "Dice en que carpeta tematica encajaria un archivo",
+            "params": {"path": "ruta del archivo"},
+            "func": tool_classify_file,
+        },
+    }
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
+!data/.gitkeep
+!traces/.gitkeep
+*.bak
+*.log
+.env
 .venv/
 __pycache__/
-.env
 data/*
-!data/.gitkeep
 traces/*
-!traces/.gitkeep
-*.log
-*.bak

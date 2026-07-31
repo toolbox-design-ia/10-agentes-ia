@@ -10,3 +10,18 @@ openai-whisper>=20231117
 httpx>=0.27
 trafilatura>=1.9
 mcp>=1.0
+
+# Capitulo 11: el ejecutor de tests del copiloto lanza pytest
+pytest>=8.0
+
+# Capitulo 12: captura de audio y deteccion de voz (VAD).
+# sounddevice necesita ADEMAS la libreria PortAudio del sistema:
+#   Debian/Ubuntu: sudo apt install libportaudio2
+#   macOS:         brew install portaudio
+# Sin ella el asistente cae a la ventana fija con sox o arecord.
+numpy>=1.24
+sounddevice>=0.4
+webrtcvad-wheels>=2.0.14
+
+# NOTA: openai-whisper necesita ffmpeg instalado en el SISTEMA (no por pip):
+#   Debian/Ubuntu: sudo apt install ffmpeg | macOS: brew install ffmpeg

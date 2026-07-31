@@ -15,6 +15,12 @@ from pathlib import Path
 import ollama
 from dotenv import load_dotenv
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from core.base_agent import BaseAgent  # noqa: E402
+
 load_dotenv()
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 # El Anexo A usa IMAP_SERVER; el Anexo B, IMAP_HOST. Se aceptan ambos.
@@ -108,6 +114,60 @@ def main() -> int:
         print("Borrador guardado en Drafts. Nada se ha enviado.")
     connection.logout()
     return 0
+
+# ---------------------------------------------------------------------------
+# El patron del capitulo 3: este agente expuesto como herramientas
+# ---------------------------------------------------------------------------
+
+def tool_list_unseen(limit: int = 10) -> str:
+    connection = connect()
+    try:
+        mensajes = fetch_unseen_headers(connection)[: int(limit)]
+        if not mensajes:
+            return "No hay mensajes sin leer."
+        return "\n".join(
+            f"[{m['id'].decode() if isinstance(m['id'], bytes) else m['id']}] "
+            f"{m['sender']} — {m['subject']} — {classify(m)}"
+            for m in mensajes)
+    finally:
+        connection.logout()
+
+
+def tool_draft_reply(message_id: str, instruction: str = "") -> str:
+    connection = connect()
+    try:
+        cuerpo = fetch_body(connection, message_id.encode())
+        prompt = load_prompt("mail_draft.txt").format(
+            subject="(ver mensaje)", sender="", body=cuerpo[:4000])
+        if instruction:
+            prompt += f"\n\nIndicacion adicional: {instruction}"
+        borrador = ollama.generate(model=MODEL, prompt=prompt)["response"].strip()
+        return "BORRADOR (no enviado):\n" + borrador
+    finally:
+        connection.logout()
+
+
+class MailClerkAgent(BaseAgent):
+    """Capitulo 6 sobre el patron del capitulo 3."""
+
+    system_prompt = (
+        "Ayudas con el triaje del correo. Lees y clasificas, y puedes redactar "
+        "borradores. NUNCA envias nada: el envio lo hace la persona desde su "
+        "cliente de correo. Dilo siempre que entregues un borrador."
+    )
+    tools = {
+        "list_unseen": {
+            "description": "Lista los mensajes sin leer con su clasificacion",
+            "params": {"limit": "cuantos mensajes como maximo"},
+            "func": tool_list_unseen,
+        },
+        "draft_reply": {
+            "description": "Redacta un borrador de respuesta, sin enviarlo",
+            "params": {"message_id": "identificador IMAP del mensaje",
+                       "instruction": "que se quiere decir en la respuesta"},
+            "func": tool_draft_reply,
+        },
+    }
 
 
 if __name__ == "__main__":
