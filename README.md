@@ -1,7 +1,7 @@
 # 10 agentes de IA que puedes crear hoy — Código del libro
 
 Repositorio companion del libro **«10 agentes de IA que puedes crear hoy»**
-(Henry Ramírez Reyes, serie INTELIGENCIA ARTIFICIAL, Studio35).
+(Henry Ramírez Reyes, serie INTELIGENCIA ARTIFICIAL, Toolbox Design).
 
 El libro explica y decide; este repositorio ejecuta: aquí está el código
 COMPLETO de los diez agentes, la instalación guiada y la guía de errores.
@@ -9,7 +9,7 @@ COMPLETO de los diez agentes, la instalación guiada y la guía de errores.
 ## Puesta en marcha (Anexo A del libro)
 
 ```
-git clone https://github.com/studio35post/10-agentes-ia.git
+git clone https://github.com/toolbox-design-ia/10-agentes-ia.git
 cd 10-agentes-ia
 
 # macOS / Linux
